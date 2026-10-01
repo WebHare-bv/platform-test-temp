@@ -34,10 +34,6 @@ jobs:
     # See https://github.com/actions/runner-images
     runs-on: ubuntu-26.04
     environment: ${{ github.event.pull_request.head.repo.fork && 'external-forks' || null }}
-    env:
-      CI_REGISTRY_IMAGE: ${{ vars.CI_REGISTRY_IMAGE }}
-      CI_REGISTRY_USER: ${{ vars.CI_REGISTRY_USER || github.actor }}
-      CI_REGISTRY_PASSWORD: ${{ vars.CI_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,9 +41,14 @@ jobs:
       - name: DEBUG RUNNING FOR
         run: echo "Running for ${{ github.event.pull_request.head.repo.fork }}"
       - name: Set container registry image to ghcr.io fallback
+        env: # can't do it a top level, environment won't be selected yet and vars are usless
+          CI_REGISTRY_IMAGE: ${{ vars.CI_REGISTRY_IMAGE }}
         if: ${{ env.CI_REGISTRY_IMAGE == '' }}
         run: echo "CI_REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Log in to registry with Podman
+        env:
+          CI_REGISTRY_USER: ${{ vars.CI_REGISTRY_USER || github.actor }}
+          CI_REGISTRY_PASSWORD: ${{ vars.CI_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
         run: echo "$CI_REGISTRY_PASSWORD" | podman login "$CI_REGISTRY_IMAGE" --username "$CI_REGISTRY_USER" --password-stdin
       - name: Build and push WebHare container
         env:
