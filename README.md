@@ -1,4 +1,8 @@
 # WebHare Platform
+xfzcv fas fTEST
+
+TEST
+
 
 This project contains:
 - The HareScript engine, modules and tests
