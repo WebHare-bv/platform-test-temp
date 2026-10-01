@@ -39,7 +39,7 @@ jobs:
         with:
           submodules: recursive
       - name: DEBUG RUNNING FOR
-        run: echo "Running for ${{ github.event.pull_request.head.repo.fork }}"
+        run: echo "Running for ${{ github.event.pull_request.head.repo.fork }} with ${{ vars.CI_REGISTRY_IMAGE }}"
       - name: Set container registry image to ghcr.io fallback
         env: # can't do it a top level, environment won't be selected yet and vars are usless
           CI_REGISTRY_IMAGE: ${{ vars.CI_REGISTRY_IMAGE }}
