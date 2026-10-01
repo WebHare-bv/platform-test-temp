@@ -10,7 +10,7 @@ on:
         default: false
 
 env:
-  CI_REGISTRY_IMAGE: ghcr.io/webhare/platform
+  CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
   CI_COMMIT_SHA: ${{ github.sha }}
   CI_COMMIT_REF_SLUG: ci-${{ github.run_id }}
   GIT_SUBMODULE_STRATEGY: recursive
@@ -36,6 +36,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Set container registry image
+        run: echo "CI_REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Log in to GHCR with Podman
         run: echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io --username '${{ github.actor }}' --password-stdin
       - name: Build and push WebHare container
@@ -98,12 +100,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Set container registry image
+        run: echo "CI_REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Log in to GHCR with Podman
         run: echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io --username '${{ github.actor }}' --password-stdin
       - name: Run test container
-        run: ${{ matrix.command }}
-        env:
-          BUILD_IMAGE: ${{ env.CI_REGISTRY_IMAGE }}:${{ env.CI_COMMIT_REF_SLUG }}-${{ env.CI_COMMIT_SHA }}
+        run: BUILD_IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA" ${{ matrix.command }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -120,12 +122,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Set container registry image
+        run: echo "CI_REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Log in to GHCR with Podman
         run: echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io --username '${{ github.actor }}' --password-stdin
       - name: Run devkit tests
-        run: TESTFW_WEBHARE_ENABLE_DEVKIT=1 addons/docker-build/testcontainer.sh --podman --noautomoduledir --webhareimage "$BUILD_IMAGE" --module "$(pwd)/whtree/modules/devkit"
-        env:
-          BUILD_IMAGE: ${{ env.CI_REGISTRY_IMAGE }}:${{ env.CI_COMMIT_REF_SLUG }}-${{ env.CI_COMMIT_SHA }}
+        run: TESTFW_WEBHARE_ENABLE_DEVKIT=1 addons/docker-build/testcontainer.sh --podman --noautomoduledir --webhareimage "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA" --module "$(pwd)/whtree/modules/devkit"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -159,13 +161,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Set container registry image
+        run: echo "CI_REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Log in to GHCR with Podman
         run: echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io --username '${{ github.actor }}' --password-stdin
-      - run: addons/docker-build/deploydocker.sh
+      - run: BUILD_IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA" addons/docker-build/deploydocker.sh
         env:
           PUSH_BUILD_IMAGES: "1"
           USEPODMAN: "1"
-          BUILD_IMAGE: ${{ env.CI_REGISTRY_IMAGE }}:${{ env.CI_COMMIT_REF_SLUG }}-${{ env.CI_COMMIT_SHA }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
