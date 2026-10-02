@@ -13,6 +13,7 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-26.04
+    environment: external-ci # use this to set up required reviewers
     steps:
       - uses: actions/checkout@v4
       - name: Fetch Registry Credentials for Fork PR
