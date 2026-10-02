@@ -2,7 +2,8 @@
 name: External Pull Request CI
 
 on:
-  pull_request:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -11,5 +12,30 @@ permissions:
 
 jobs:
   ci:
-    if: github.event.pull_request.head.repo.full_name != github.repository
-    uses: ./.github/workflows/ci.yml
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch Registry Credentials for Fork PR
+        id: fork-creds
+        # if: ${{ github.event.pull_request.head.repo.fork }} # FIXME re-add for testing
+        uses: ./.github/actions/get-registry-creds
+        with:
+          auth_service_url: "https://portal.webhare.com/portalapi/ci/get-buildcache-token"
+          audience: "https://portal.webhare.com"
+      - name: Trigger Fork CI via Workflow Dispatch
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REPO_ADMIN_OR_PAT_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci.yml',
+              ref: context.payload.pull_request.head.ref,
+              inputs: {
+                cache_registry: '${{ steps.fork-creds.outputs.registry_url }}',
+                cache_user: '${{ steps.fork-creds.outputs.registry_user }}',
+                cache_password: '${{ steps.fork-creds.outputs.registry_password }}',
+                pr_number: '${{ github.event.pull_request.number }}'
+              }
+            });
